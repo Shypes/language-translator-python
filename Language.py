@@ -7,9 +7,8 @@ from functools import partial
 
 
 class Language:
-    activeLangData = {}
-    defaultLangData = {}
-    passiveLangData = {}
+    FolerLanguage = {}
+    LanguageData = {}
 
     option = {}
     default = {
@@ -53,8 +52,13 @@ class Language:
         self.set_path()
 
     def set_language_dir(self, directory):
-        self.option['langFolder'] = directory
-        self.set_path()
+        if self.option['langFolder'] != directory:
+            self.option['langFolder'] = directory
+            self.set_path()
+            self.init(False)
+            for language in self.FolerLanguage[self.option['langFolder']]:
+                data = self.FolerLanguage[self.option['langFolder']][language]
+                self.load(language, data)
 
     def set_default_lang(self, language):
         self.option['default_lang'] = language
@@ -63,18 +67,20 @@ class Language:
 
     def set_path(self):
         self.langPath = self.option['__basedir'] + '/' + self.option['langFolder']
+        if self.option['langFolder'] not in self.FolerLanguage:
+            self.FolerLanguage[self.option['langFolder']] = {}
 
     def get_path(self):
         return self.langPath
 
     def text(self, text, language='', param={}):
         language = language if (language and language != '' and isinstance(language, str)) else self.active_lang
-        if language in self.passiveLangData:
-            if text in self.passiveLangData[language]:
+        if language in self.LanguageData:
+            if text in self.LanguageData[language]:
                 if len(param) == 0:
-                    return self.passiveLangData[language][text]
+                    return self.LanguageData[language][text]
                 else:
-                    return self.render_string(self.passiveLangData[language][text], param)
+                    return self.render_string(self.LanguageData[language][text], param)
         return text
 
     def get_text(self, text, language='', param={}):
@@ -100,56 +106,58 @@ class Language:
         self.set_active_lang(language)
         self.load_default_lang()
         self.load_active_lang()
-        self.load_passive_lang()
 
     def load_default_lang(self):
-        if len(self.defaultLangData) == 0 \
-                and self.loaded is False \
-                and self.load_from_file:
-            file_path = self.get_path()
-            is_file = os.path.exists(file_path + '/' + self.option['default_lang'] + self.option['ext'])
-            if is_file:
-                with open(file_path + '/' + self.option['default_lang'] + self.option['ext']) as data_file:
-                    try:
-                        self.defaultLangData = json.load(data_file)
-                    except Exception:
-                        self.defaultLangData = {}
-            else:
-                self.defaultLangData = {}
+        if self.loaded is False:
+            self.load_language(self.option['default_lang'])
         self.loaded = True
 
     def load_active_lang(self):
-        if (self.active_lang not in self.activeLangData) \
-                and self.load_from_file \
-                and (self.active_lang not in self.passiveLangData):
-            if self.option['default_lang'] == self.active_lang:
-                self.activeLangData[self.active_lang] = self.defaultLangData.copy()
-            else:
-                file_path = self.get_path()
-                is_file = os.path.exists(file_path + '/' + self.active_lang + self.option['ext'])
-                if is_file:
-                    with open(file_path + '/' + self.active_lang + self.option['ext']) as data_file:
-                        try:
-                            self.activeLangData[self.active_lang] = json.load(data_file)
-                        except Exception:
-                            self.activeLangData[self.active_lang] = {}
-                else:
-                    self.activeLangData[self.active_lang] = {}
+        self.load_language(self.active_lang)
 
-    def load_passive_lang(self):
-        if self.active_lang not in self.passiveLangData:
-            self.passiveLangData[self.active_lang] = self.defaultLangData.copy()
-            if self.active_lang in self.activeLangData:
-                self.passiveLangData[self.active_lang].update(self.activeLangData[self.active_lang])
+    def has_loaded_language(self, language):
+        return language in self.FolerLanguage[self.option['langFolder']]
+
+    def can_load(self, language):
+        file_path = self.get_path()
+        return os.path.exists(file_path + '/' + language + self.option['ext'])
+
+    def mark_as_loaded(self, language):
+        self.load_folder_language(language)
+
+    def load_folder_language(self, language, data={}):
+        if isinstance(data, dict):
+            self.set_path()
+            self.FolerLanguage[self.option['langFolder']][language] = data
+
+    def get_folder_language(self, language):
+        if self.option['langFolder'] in self.FolerLanguage:
+            if language in self.FolerLanguage[self.option['langFolder']]:
+                return self.FolerLanguage[self.option['langFolder']][language]
+        return {}
+
+    def get_file(self, language):
+        file_path = self.get_path()
+        with open(file_path + '/' + language + self.option['ext']) as data_file:
+            try:
+                return json.load(data_file)
+            except Exception:
+                return {}
+
+    def load_language(self, language):
+        if self.load_from_file and not self.has_loaded_language(language):
+            if self.can_load(language):
+                self.load_folder_language(language, self.get_file(language))
+                self.load(language, self.get_folder_language(language))
+            else:
+                self.mark_as_loaded(language)
 
     def load(self, language, data):
-        if language not in self.passiveLangData:
-            self.passiveLangData[language] = data.copy()
-        else:
-            self.passiveLangData[language].update(data)
-
-    def load_language(self, language, data):
-        return self.load(language, data)
+        if isinstance(data, dict) and len(data) > 0:
+            if language not in self.LanguageData:
+                self.LanguageData[language] = data.copy()
+            else:
+                self.LanguageData[language].update(data)
 
 
 _SL = None
@@ -182,4 +190,16 @@ def load(language, data):
     return Lang.load(language, data)
 
 
+def set_load_from_file(load):
+    Lang = getLang()
+    return Lang.set_load_from_file(load)
 
+
+def get_path():
+    Lang = getLang()
+    return Lang.get_path()
+
+
+def set_language_dir (directory):
+    Lang = getLang()
+    return Lang.set_language_dir (directory)
