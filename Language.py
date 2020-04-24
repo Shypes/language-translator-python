@@ -7,7 +7,7 @@ from functools import partial
 
 
 class Language:
-    FolerLanguage = {}
+    FolderLanguage = {}
     LanguageData = {}
 
     option = {}
@@ -55,20 +55,19 @@ class Language:
         if self.option['langFolder'] != directory:
             self.option['langFolder'] = directory
             self.set_path()
-            self.init(False)
-            for language in self.FolerLanguage[self.option['langFolder']]:
-                data = self.FolerLanguage[self.option['langFolder']][language]
+            self.init(self.active_lang)
+            for language in self.FolderLanguage[self.option['langFolder']]:
+                data = self.FolderLanguage[self.option['langFolder']][language]
                 self.load(language, data)
 
     def set_default_lang(self, language):
         self.option['default_lang'] = language
         self.loaded = False
-        self.defaultLangData = {}
 
     def set_path(self):
         self.langPath = self.option['__basedir'] + '/' + self.option['langFolder']
-        if self.option['langFolder'] not in self.FolerLanguage:
-            self.FolerLanguage[self.option['langFolder']] = {}
+        if self.option['langFolder'] not in self.FolderLanguage:
+            self.FolderLanguage[self.option['langFolder']] = {}
 
     def get_path(self):
         return self.langPath
@@ -116,7 +115,7 @@ class Language:
         self.load_language(self.active_lang)
 
     def has_loaded_language(self, language):
-        return language in self.FolerLanguage[self.option['langFolder']]
+        return language in self.FolderLanguage[self.option['langFolder']]
 
     def can_load(self, language):
         file_path = self.get_path()
@@ -128,12 +127,12 @@ class Language:
     def load_folder_language(self, language, data={}):
         if isinstance(data, dict):
             self.set_path()
-            self.FolerLanguage[self.option['langFolder']][language] = data
+            self.FolderLanguage[self.option['langFolder']][language] = data
 
     def get_folder_language(self, language):
-        if self.option['langFolder'] in self.FolerLanguage:
-            if language in self.FolerLanguage[self.option['langFolder']]:
-                return self.FolerLanguage[self.option['langFolder']][language]
+        if self.option['langFolder'] in self.FolderLanguage:
+            if language in self.FolderLanguage[self.option['langFolder']]:
+                return self.FolderLanguage[self.option['langFolder']][language]
         return {}
 
     def get_file(self, language):
@@ -142,6 +141,7 @@ class Language:
             try:
                 return json.load(data_file)
             except Exception:
+                print("Could not load language file:" + file_path + '/' + language + self.option['ext'])
                 return {}
 
     def load_language(self, language):
@@ -200,6 +200,6 @@ def get_path():
     return Lang.get_path()
 
 
-def set_language_dir (directory):
+def set_language_dir(directory):
     Lang = getLang()
     return Lang.set_language_dir (directory)
