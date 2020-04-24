@@ -137,12 +137,12 @@ class Language:
 
     def get_file(self, language):
         file_path = self.get_path()
-        with open(file_path + '/' + language + self.option['ext']) as data_file:
-            try:
+        try:
+            with open(file_path + '/' + language + self.option['ext']) as data_file:
                 return json.load(data_file)
-            except Exception:
-                print("Could not load language file:" + file_path + '/' + language + self.option['ext'])
-                return {}
+        except Exception:
+            print("Could not load language file: " + file_path + '/' + language + self.option['ext'])
+            return {}
 
     def load_language(self, language):
         if self.load_from_file and not self.has_loaded_language(language):
