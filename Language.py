@@ -21,6 +21,7 @@ class Language:
     loaded = False
     load_from_file = False
     langPath = ""
+    safe_load = True
 
     def __init__(self, options={}):
         self.reset(options)
@@ -68,6 +69,9 @@ class Language:
         self.langPath = self.option['__basedir'] + '/' + self.option['langFolder']
         if self.option['langFolder'] not in self.FolderLanguage:
             self.FolderLanguage[self.option['langFolder']] = {}
+
+    def set_safe_load(self, is_safe):
+        self.safe_load = False if is_safe is False else True
 
     def get_path(self):
         return self.langPath
@@ -142,6 +146,9 @@ class Language:
                 return json.load(data_file)
         except Exception:
             print("Could not load language file: " + file_path + '/' + language + self.option['ext'])
+            if self.safe_load is not True:
+                import sys
+                sys.exit(0)
             return {}
 
     def load_language(self, language):
@@ -202,4 +209,9 @@ def get_path():
 
 def set_language_dir(directory):
     Lang = getLang()
-    return Lang.set_language_dir (directory)
+    return Lang.set_language_dir(directory)
+
+
+def set_safe_load(safe):
+    Lang = getLang()
+    return Lang.set_safe_load(safe)

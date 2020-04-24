@@ -19,6 +19,7 @@ Language.__({
     "__basedir": root_dir,
 })
 
+Language.set_safe_load(False)
 
 def run():
 
